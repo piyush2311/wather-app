@@ -1,11 +1,11 @@
-import express from 'express';
+import express, { type Request, type Response, type NextFunction, type ErrorRequestHandler } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import axios from 'axios';
-import type { Request, Response } from 'express';
+import fs from 'fs';
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +20,7 @@ const __dirname = dirname(__filename);
 // Middleware
 app.use(cors());
 app.use(express.json());
+
 
 // API Routes
 app.get('/api/temp/:city', async (req: Request, res: Response) => {
@@ -44,21 +45,26 @@ app.get('/api/temp/:city', async (req: Request, res: Response) => {
   }
 });
 
-// Serve static files from the Next.js app in production
-if (process.env.NODE_ENV === 'production') {
-  // Serve static files from the Next.js app
-  app.use(express.static(path.join(__dirname, '../frontend/.next')));
-  
-  // Serve the main index.html for all non-API GET requests
-  app.get('/*', (req, res, next) => {
-    // Skip API routes
-    if (req.path.startsWith('/api/')) {
-      return next();
+app.use(express.static(path.join(__dirname, '../public')));
+app.use((req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// Error handling middleware
+const errorHandler: ErrorRequestHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
+    if ('name' in err && err.name === 'ValidationError' && 'errors' in err) {
+        const valErrors: any = [];
+        Object.keys((err as any).errors).forEach(key => {
+            valErrors.push((err as any).errors[key].message);
+        });
+        res.status(422).send(valErrors);
+    } else {
+        console.error('Error:', err);
+        res.status(500).send('Something went wrong!');
     }
-    // Serve index.html for all other routes
-    res.sendFile(path.join(__dirname, '../frontend/.next/static/chunks/pages/index.html'));
-  });
-}
+};
+
+app.use(errorHandler);
 
 // Start the server
 app.listen(PORT, () => {
