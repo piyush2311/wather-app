@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const nextConfig = {
+  output: 'export',
+  distDir: '.next',
+  // Add this to handle client-side routing
+  trailingSlash: true,
+}
 
 export default nextConfig;
