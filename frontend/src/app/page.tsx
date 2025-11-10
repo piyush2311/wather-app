@@ -21,7 +21,7 @@ export default function Home() {
     
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:4000/api/temp/${encodeURIComponent(city)}`);
+      const response = await fetch(`/api/temp/${encodeURIComponent(city)}`);
       const data = await response.json();
       
       if (response.ok) {

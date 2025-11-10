@@ -1,47 +1,61 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import fetch from "node-fetch";
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import axios from 'axios';
+import type { Request, Response } from 'express';
 
+// Load environment variables
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 4000;
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Test route
-app.get("/", (req, res) => {
-  res.send("Temperature backend is running!");
-});
-
-
-app.get("/api/temp/:city", async (req, res) => {
-  const { city } = req.params;
-  const apiKey = process.env.OPENWEATHER_KEY;
-
-  if (!apiKey) {
-    return res.status(500).json({ error: "Missing API key" });
-  }
-
+// API Routes
+app.get('/api/temp/:city', async (req: Request, res: Response) => {
   try {
-    const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`
-    );
-    const data: any = await response.json();
-
-    if (data.cod !== 200) {
-      return res.status(data.cod).json({ error: data.message });
-    }
-
+    const { city } = req.params;
+    const apiKey = process.env.OPENWEATHER_KEY;
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+    
+    const response = await axios.get(url);
+    const { main, weather, name } = response.data;
+    
     res.json({
-      city: data.name,
-      temperature: data.main.temp,
-      description: data.weather[0].description,
+      temp: main.temp,
+      city: name,
+      description: weather[0].description,
+      humidity: main.humidity,
+      wind: response.data.wind.speed
     });
   } catch (error) {
-    res.status(500).json({ error: "Error fetching data" });
+    console.error('Error fetching weather:', error);
+    res.status(500).json({ error: 'Error fetching weather data' });
   }
 });
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+// Serve static files from the Next.js app in production
+if (process.env.NODE_ENV === 'production') {
+  // Serve static files from the Next.js app
+  app.use(express.static(path.join(__dirname, '../frontend/.next')));
+  
+  // Handle React routing, return all requests to the app
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/.next/static/chunks/pages/index.js'));
+  });
+}
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});

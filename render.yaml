@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: weather-app
+    env: node
+    buildCommand: |
+      cd backend && npm install
+      cd ../frontend && npm install
+      cd ../backend && npm run build
+      cd ../frontend && npm run build
+    startCommand: cd backend && npm start
+    staticPublishPath: "./frontend/.next"
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+      # Add other backend environment variables here
+      - key: OPENWEATHER_KEY
+        value: 49922cf15337757c2cd238bc68e8fb28
