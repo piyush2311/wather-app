@@ -49,9 +49,14 @@ if (process.env.NODE_ENV === 'production') {
   // Serve static files from the Next.js app
   app.use(express.static(path.join(__dirname, '../frontend/.next')));
   
-  // Handle React routing, return all requests to the app
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/.next/static/chunks/pages/index.js'));
+  // Handle client-side routing, return all requests to the app
+  app.get('*', (req, res, next) => {
+    // Skip API routes
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
+    // Serve the main index file for all other routes
+    res.sendFile(path.join(__dirname, '../frontend/.next/static/chunks/pages/index.html'));
   });
 }
 
