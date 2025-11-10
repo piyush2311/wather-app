@@ -45,9 +45,12 @@ app.get('/api/temp/:city', async (req: Request, res: Response) => {
   }
 });
 
-app.use(express.static(path.join(__dirname, '../public')));
+const frontendPath = path.join(__dirname, '../../frontend/out');
+
+app.use(express.static(frontendPath));
+
 app.use((req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
+    res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // Error handling middleware
